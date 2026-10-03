@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Эволюция Слаймов: Слияние и Кликер</title>
+  <!-- Yandex Games SDK -->
+  <script src="https://yandex.ru/games/sdk/v2"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900;1000&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Top Header Bar -->
+    <header class="top-bar">
+      <div class="stat-badge coins-badge">
+        <span class="badge-icon">🪙</span>
+        <div class="stat-info">
+          <span class="stat-value" id="coins-display">0</span>
+          <span class="stat-sub" id="income-display">+0/сек</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Boost Timer Display if active -->
+        <div id="boost-indicator" class="boost-badge hidden">
+          <span class="boost-icon">⚡</span>
+          <span id="boost-timer">00:00</span>
+        </div>
+
+        <!-- Audio Toggle -->
+        <button id="btn-sound" class="icon-btn" title="Звук: Вкл/Выкл">
+          <span id="sound-icon">🔊</span>
+        </button>
+
+        <!-- Fullscreen Toggle -->
+        <button id="btn-fullscreen" class="icon-btn" title="На весь экран">
+          <span>⛶</span>
+        </button>
+
+        <!-- Main Menu -->
+        <button id="btn-menu" class="icon-btn highlight-icon-btn" title="Меню">
+          <span>☰</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="main-content">
+      <!-- Incubation & Click Zone -->
+      <section class="incubator-section">
+        <div class="incubator-card" id="incubator-box">
+          <div class="incubator-glow"></div>
+          <canvas id="incubator-canvas" width="160" height="160"></canvas>
+          <div class="incubator-progress-container">
+            <div class="incubator-bar" id="incubator-progress"></div>
+          </div>
+          <div class="incubator-tap-hint">Нажимай для ускорения!</div>
+        </div>
+
+        <div class="quick-boost-panel">
+          <button id="btn-ad-boost" class="bonus-btn boost-action">
+            <span class="ad-tag">РЕКЛАМА</span>
+            <span class="bonus-icon">⚡x2</span>
+            <span class="bonus-text">Буст x2 на 2 мин</span>
+          </button>
+          <button id="btn-ad-chest" class="bonus-btn chest-action">
+            <span class="ad-tag">РЕКЛАМА</span>
+            <span class="bonus-icon">🎁</span>
+            <span class="bonus-text">Сундук монет</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- 4x4 Slimes Merge Field -->
+      <section class="field-section">
+        <div class="field-header">
+          <span class="field-title">Поляна Слаймов (<span id="slots-count">0</span>/16)</span>
+          <button id="btn-auto-merge" class="mini-btn" title="Слить одинаковых слаймов">
+            <span>✨ Слияние</span>
+          </button>
+        </div>
+        <div class="merge-grid" id="merge-grid">
+          <!-- 16 Cells will be rendered by JS -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+      <button class="nav-tab active" data-tab="game">
+        <span class="tab-icon">🐾</span>
+        <span class="tab-label">Игра</span>
+      </button>
+      <button class="nav-tab" data-tab="upgrades">
+        <span class="tab-icon">⚡</span>
+        <span class="tab-label">Прокачка</span>
+        <span class="badge-dot hidden" id="upgrades-badge"></span>
+      </button>
+      <button class="nav-tab" data-tab="collection">
+        <span class="tab-icon">📖</span>
+        <span class="tab-label">Коллекция</span>
+        <span class="badge-dot hidden" id="collection-badge"></span>
+      </button>
+      <button class="nav-tab" data-tab="quests">
+        <span class="tab-icon">🏆</span>
+        <span class="tab-label">Задания</span>
+        <span class="badge-dot hidden" id="quests-badge"></span>
+      </button>
+    </nav>
+
+    <!-- Modal Sheets / Views -->
+    
+    <!-- UPGRADES VIEW -->
+    <div id="view-upgrades" class="modal-sheet hidden">
+      <div class="modal-header">
+        <h2>Магическая Прокачка</h2>
+        <button class="close-btn" data-close="view-upgrades">✕</button>
+      </div>
+      <div class="modal-body" id="upgrades-list">
+        <!-- Upgrades injected by JS -->
+      </div>
+    </div>
+
+    <!-- COLLECTION VIEW -->
+    <div id="view-collection" class="modal-sheet hidden">
+      <div class="modal-header">
+        <h2>Книга Питомцев (<span id="collection-unlocked-count">1</span>/20)</h2>
+        <button class="close-btn" data-close="view-collection">✕</button>
+      </div>
+      <div class="modal-body collection-grid" id="collection-list">
+        <!-- Collection items injected by JS -->
+      </div>
+    </div>
+
+    <!-- QUESTS VIEW -->
+    <div id="view-quests" class="modal-sheet hidden">
+      <div class="modal-header">
+        <h2>Достижения и Награды</h2>
+        <button class="close-btn" data-close="view-quests">✕</button>
+      </div>
+      <div class="modal-body quests-list" id="quests-list">
+        <!-- Quests injected by JS -->
+      </div>
+    </div>
+
+    <!-- NEW SLIME UNLOCKED CELEBRATION MODAL -->
+    <div id="modal-unlock" class="dialog-overlay hidden">
+      <div class="dialog-card celebration-card">
+        <div class="sparkles-bg"></div>
+        <h3 class="dialog-subtitle">НОВЫЙ ВИД СЛАЙМА!</h3>
+        <canvas id="unlock-slime-canvas" width="180" height="180"></canvas>
+        <h2 id="unlock-slime-name" class="unlock-name">Огненный Слайм</h2>
+        <div class="unlock-stats">
+          <span class="tier-pill">Уровень <span id="unlock-slime-tier">2</span></span>
+          <span class="income-pill">💰 +<span id="unlock-slime-income">2</span>/сек</span>
+        </div>
+        <p class="unlock-desc" id="unlock-slime-desc">Описание слайма</p>
+        <button id="btn-claim-unlock" class="primary-btn glow-btn">Здорово!</button>
+      </div>
+    </div>
+
+    <!-- OFFLINE EARNINGS MODAL -->
+    <div id="modal-offline" class="dialog-overlay hidden">
+      <div class="dialog-card">
+        <h3>Добро пожаловать обратно!</h3>
+        <div class="offline-icon">💤 ➜ 💰</div>
+        <p>Пока вас не было, слаймы принесли вам:</p>
+        <div class="offline-coins" id="offline-coins-val">+0</div>
+        <div class="offline-actions">
+          <button id="btn-offline-double" class="bonus-btn glow-btn">
+            <span class="ad-tag">РЕКЛАМА</span>
+            <span>Удвоить x2 💎</span>
+          </button>
+          <button id="btn-offline-collect" class="secondary-btn">Забрать просто так</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GIFT BONUS MODAL (REWARDED AD CONVERSION) -->
+    <div id="modal-gift" class="dialog-overlay hidden">
+      <div class="dialog-card">
+        <h3>Волшебный Сюрприз!</h3>
+        <div class="offline-icon">🎁✨</div>
+        <p>Слайм-фея принесла вам щедрую награду:</p>
+        <div class="offline-coins" id="gift-coins-val">+0</div>
+        <div class="offline-actions">
+          <button id="btn-gift-claim" class="bonus-btn glow-btn">
+            <span class="ad-tag">РЕКЛАМА</span>
+            <span>Посмотреть видео и забрать 🎁</span>
+          </button>
+          <button class="secondary-btn" data-close="modal-gift">Отказаться</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN MENU OVERLAY -->
+    <div id="modal-main-menu" class="dialog-overlay hidden">
+      <div class="dialog-card menu-card">
+        <div class="menu-sparkles"></div>
+        <div class="menu-header-badge">МИР ПИТОМЦЕВ</div>
+        <h1 class="menu-title">ЭВОЛЮЦИЯ<br><span class="highlight-text">СЛАЙМОВ</span></h1>
+
+        <div class="menu-preview-container">
+          <canvas id="menu-slime-canvas" width="130" height="130"></canvas>
+          <div class="menu-preview-info">
+            <span class="menu-preview-tier" id="menu-slime-tier">Уровень 1</span>
+            <span class="menu-preview-name" id="menu-slime-name">Капельник</span>
+          </div>
+        </div>
+
+        <div class="menu-buttons">
+          <button id="btn-menu-play" class="primary-btn glow-btn menu-action-btn play-action">
+            <span>▶ ПРОДОЛЖИТЬ</span>
+          </button>
+          <button id="btn-menu-settings" class="secondary-btn menu-action-btn">
+            <span>⚙️ Настройки</span>
+          </button>
+          <button id="btn-menu-stats" class="secondary-btn menu-action-btn">
+            <span>📊 Статистика</span>
+          </button>
+          <button id="btn-menu-help" class="secondary-btn menu-action-btn">
+            <span>❓ Как играть</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="modal-settings" class="dialog-overlay hidden">
+      <div class="dialog-card">
+        <div class="modal-header">
+          <h2>Настройки</h2>
+          <button class="close-btn" data-close="modal-settings">✕</button>
+        </div>
+        <div class="settings-list">
+          <div class="setting-item">
+            <div class="setting-text">
+              <span class="setting-icon">🔊</span>
+              <span>Звуки игры</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-sound" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-text">
+              <span class="setting-icon">🎵</span>
+              <span>Мелодия</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="setting-music" checked>
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="setting-item danger-item">
+            <div class="setting-text">
+              <span class="setting-icon">🔄</span>
+              <span>Сбросить всё заново</span>
+            </div>
+            <button id="btn-reset-data" class="mini-danger-btn">Сброс</button>
+          </div>
+        </div>
+        <button class="primary-btn" data-close="modal-settings" style="margin-top: 14px;">Закрыть</button>
+      </div>
+    </div>
+
+    <!-- RESET CONFIRMATION MODAL -->
+    <div id="modal-confirm-reset" class="dialog-overlay hidden">
+      <div class="dialog-card">
+        <h3>Сброс Прогресса</h3>
+        <div class="offline-icon">⚠️</div>
+        <p>Вы действительно хотите сбросить весь прогресс и начать игру с самого начала?</p>
+        <p style="font-size: 11px; color: #ef476f; margin-top: 6px; font-weight: 800;">Все открытые слаймы, монеты и прокачка будут обнулены!</p>
+        <div class="offline-actions" style="margin-top: 16px;">
+          <button id="btn-confirm-reset-yes" class="primary-btn" style="background: linear-gradient(135deg, #ef476f, #d90429); color: white;">
+            Да, сбросить всё!
+          </button>
+          <button id="btn-confirm-reset-no" class="secondary-btn" data-close="modal-confirm-reset">
+            Отмена
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS MODAL -->
+    <div id="modal-stats" class="dialog-overlay hidden">
+      <div class="dialog-card">
+        <div class="modal-header">
+          <h2>Статистика</h2>
+          <button class="close-btn" data-close="modal-stats">✕</button>
+        </div>
+        <div class="stats-container">
+          <div class="stat-card">
+            <span class="stat-card-val" id="stat-max-tier">1 / 20</span>
+            <span class="stat-card-lbl">Рекордный уровень</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card-val" id="stat-merges">0</span>
+            <span class="stat-card-lbl">Слияний</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card-val" id="stat-clicks">0</span>
+            <span class="stat-card-lbl">Кликов</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card-val" id="stat-total-coins">0</span>
+            <span class="stat-card-lbl">Всего монет</span>
+          </div>
+        </div>
+        <button class="primary-btn" data-close="modal-stats" style="margin-top: 14px;">Закрыть</button>
+      </div>
+    </div>
+
+    <!-- HELP / INFO MODAL -->
+    <div id="modal-help" class="dialog-overlay hidden">
+      <div class="dialog-card">
+        <div class="modal-header">
+          <h2>Как играть?</h2>
+          <button class="close-btn" data-close="modal-help">✕</button>
+        </div>
+        <div class="help-content">
+          <div class="help-item">
+            <span class="help-icon">🥚</span>
+            <p><strong>Инкубатор:</strong> нажимай на яйцо, чтобы ускорить появление новых слаймов!</p>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">🔀</span>
+            <p><strong>Слияние:</strong> перетаскивай одинаковых слаймов друг на друга, чтобы эволюционировать их в более редких и богатых!</p>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">🪙</span>
+            <p><strong>Доход:</strong> каждый слайм приносит монеты автоматически. Чем выше уровень — тем больше прибыль!</p>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">⚡</span>
+            <p><strong>Улучшения:</strong> вкладывай монеты в скорость, автослияние и бонусный доход!</p>
+          </div>
+        </div>
+        <button class="primary-btn" data-close="modal-help">Понятно!</button>
+      </div>
+    </div>
+
+    <!-- FLOATING PARTICLES CANVAS -->
+    <canvas id="effects-canvas"></canvas>
+  </div>
+
+  <!-- Game Scripts -->
+  <script src="js/audio.js"></script>
+  <script src="js/yandex-sdk.js"></script>
+  <script src="js/slimes.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

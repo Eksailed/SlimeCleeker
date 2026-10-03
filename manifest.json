@@ -1,0 +1,17 @@
+{
+  "name": "Эволюция Слаймов: Слияние и Кликер",
+  "short_name": "Эволюция Слаймов",
+  "description": "Увлекательная игра про слияние милых слаймов, кликер и эволюцию!",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "background_color": "#1b2845",
+  "theme_color": "#ffb703",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
